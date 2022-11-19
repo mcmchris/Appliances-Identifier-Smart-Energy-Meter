@@ -3,8 +3,8 @@
  * Project: Appliances Identifier Smart Energy Meter | Edge Impulse + Blues Wireless
  * Hardware: Nucleo-F767ZI + WiFi Notecard + Custom PCB
  * Author: Christopher Mendez Martinez
- * Code repository: https//
- * Tutorial guide: https//
+ * Code repository: https://github.com/mcmchris/Appliances-Identifier-Smart-Energy-Meter
+ * Tutorial guide: https://www.hackster.io/mcmchris/appliances-identifier-smart-energy-meter-a125f5
  * Date: Nov 17th, 2022
  * Revision: 0.0.1
  */
@@ -20,7 +20,7 @@
 
 #define ADC_COUNTS (1 << 12) // ADC resolution
 
-#define PRODUCT_UID "com.hotmail.mcmchris:mcmmeter" // Notehub device identifier
+#define PRODUCT_UID "................" // Notehub device identifier
 #define myProductID PRODUCT_UID
 
 // Measuring task instance
@@ -151,12 +151,13 @@ void medicion() {
     tiempo = duration_cast<microseconds>(integrator.elapsed_time()).count();
     integrator.reset();
 
-    //printf("Duro = %f\n", tiempo);
+    printf("Duro = %f\n", tiempo);
     KWH += realPower / ((1000000.0 / tiempo) * 3600000.0); // Integrate power to extract energy
 
     if(Vrms < 10){
         printf("There's no energy!\r\n");
     }
+    //ThisThread::sleep_for(1s);
 
   }
 }
@@ -164,7 +165,7 @@ void medicion() {
 // Function to parse and send the Notecard data through serial
 void NotecardSend(){
 
-char message1[109];
+char message1[200];
       
       sprintf(message1,
               "{"
@@ -178,8 +179,11 @@ char message1[109];
               Vrms, Irms, realPower, KWH, powerFactor); 
 
       serial_port.write(message1, sizeof(message1));
+      //printf(message1);
 
-      char message2[150];
+      ThisThread::sleep_for(2s);
+
+      char message2[250];
 
       sprintf(message2,
               "{"
@@ -188,16 +192,19 @@ char message1[109];
               "\"sync\":true"
               ","
               "\"body\":{\"refri\":%.2f,\"fan\":%.2f,\"lightbulb\":%.2f,"
-              "\"tv\":%.2f,\"ac\":%.2f,\"microwave\":%.2f,\"unknown\":%.2f,"
-              "\"nothing\":%.2f}"
+              "\"tv\":%.2f,\"ac\":%.2f,\"microwave\":%.2f,\"nothing\":%.2f,"
+              "\"unknown\":%.2f}"
               "}\r\n",
               result.classification[4].value, result.classification[0].value,
               result.classification[2].value, result.classification[6].value,
-              result.classification[5].value, result.classification[1].value,
-              result.classification[3].value, result.anomaly); // 22
+              result.classification[1].value, result.classification[3].value,
+              result.classification[5].value, result.anomaly); // 22
 
       serial_port.write(message2, sizeof(message2));
+      //printf(message2);
 }
+
+
 
 
 int main() {
@@ -225,9 +232,8 @@ int main() {
   while (1) {
 
     // Wait for the data to be stored to start the inference
-    if (nombre.try_acquire() == false && Vrms > 10) {  // not happening if there's no energy
+    if (nombre.try_acquire() == false) {  // not happening if there's no energy
 
-      
       inferencia();  // start the inference
 
       printf("Vrms = %f V; Irms = %f I; P = %f W; S = %f VA; FP = %f; KWH = %f\n",
@@ -459,7 +465,7 @@ void autoRango() {
     seteo = 255;
     DigiPot(seteo);
   }
-  //printf("ICAL = %f, SETEO = %d\n", ICAL, seteo);
+  printf("ICAL = %f, SETEO = %d\n", ICAL, seteo);
 
   // Manual calibration of current on each gain step (This code block worth millions)
   switch (seteo) {
